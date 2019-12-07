@@ -1,6 +1,6 @@
-### @capacitor/angular
+### @rdlabo/ng-add-formatter
 
-A collection of schematics for Capacitor and Angular apps.
+A collection of schematics for Prettier and stage-lint in Angular apps.
 
 
 #### ng-add
@@ -8,5 +8,5 @@ A collection of schematics for Capacitor and Angular apps.
 To add Capacitor to an existing Angular app, run:
 
 ```bash
-ng add @capacitor/angular
+ng add @rdlabo/ng-add-formatter
 ```

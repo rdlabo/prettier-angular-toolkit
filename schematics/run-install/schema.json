@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/schema",
-  "id": "ionicCapInit",
-  "title": "Init Cap",
+  "id": "RunNpmInstall",
+  "title": "Run Npm Install",
   "type": "object",
   "properties": {
     "command": {

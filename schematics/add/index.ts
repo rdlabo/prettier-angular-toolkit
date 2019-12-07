@@ -1,81 +1,85 @@
-import { Rule, SchematicContext, SchematicsException, Tree, chain } from '@angular-devkit/schematics';
+import { Rule, SchematicsException, Tree, chain } from '@angular-devkit/schematics';
 import { NodePackageInstallTask, RunSchematicTask } from '@angular-devkit/schematics/tasks';
 import { getPackageManager } from '@angular/cli/utilities/package-manager';
 import { getWorkspace } from '@schematics/angular/utility/workspace';
-import { ScriptTarget, SourceFile, createSourceFile } from 'typescript';
 
-import { insertImport, isImported } from '../utils/devkit-utils/ast-utils';
-import { InsertChange } from '../utils/devkit-utils/change';
+import { addKeyToPackageJson, addPackageToPackageJson, addScriptsToPackageJson } from './../utils/package';
+import { Schema } from './schema';
 
-import { addPackageToPackageJson } from './../utils/package';
-import { Schema as CapAddOptions } from './schema';
-
-function addCapacitorToPackageJson(): Rule {
+function addFormatterToPackageJson(): Rule {
   return (host: Tree) => {
-    addPackageToPackageJson(host, 'dependencies', '@capacitor/core', 'latest');
     addPackageToPackageJson(
       host,
       'devDependencies',
-      '@capacitor/cli',
+      'prettier',
       'latest'
+    );
+    addPackageToPackageJson(
+      host,
+      'devDependencies',
+      'lint-staged',
+      'latest'
+    );
+    addPackageToPackageJson(
+      host,
+      'devDependencies',
+      '@kaizenplatform/prettier-config',
+      'latest'
+    );
+    addScriptsToPackageJson(
+      host,
+      'lint-staged',
+      'lint-staged'
+    );
+    addScriptsToPackageJson(
+      host,
+      'format',
+      'prettier --parser typescript --write \"./**/*.ts\" &&  prettier --parser angular --write \"./**/*.html\"'
+    );
+    addKeyToPackageJson(
+      host,
+      'pre-commit',
+      [
+        'lint-staged',
+      ]
+    );
+    addKeyToPackageJson(
+      host,
+      'lint-staged',
+      {
+        '*.ts': [
+          'prettier --parser typescript --write',
+          'git add',
+        ],
+        '*.html': [
+          'prettier --parser angular --write',
+          'git add',
+        ],
+      }
     );
     return host;
   };
 }
 
-function getTsSourceFile(host: Tree, path: string): SourceFile {
-  const buffer = host.read(path);
-  if (!buffer) {
-    throw new SchematicsException(`Could not read file (${path}).`);
-  }
-  const content = buffer.toString();
-  const source = createSourceFile(path, content, ScriptTarget.Latest, true);
-
-  return source;
-}
-
-function addCapPluginsToAppComponent(projectSourceRoot: string): Rule {
+function addPrettierConfig(): Rule {
   return (host: Tree) => {
-    const modulePath = `${projectSourceRoot}/app/app.component.ts`;
-    const moduleSource = getTsSourceFile(host, modulePath);
-    const importModule = 'Plugins';
-    const importPath = '@capacitor/core';
-    if (!isImported(moduleSource, importModule, importPath)) {
-      const change = insertImport(
-        moduleSource,
-        modulePath,
-        importModule,
-        importPath,
-        false
-      );
-      if (change) {
-        const recorder = host.beginUpdate(modulePath);
-        recorder.insertLeft(
-          (change as InsertChange).pos,
-          (change as InsertChange).toAdd
-        );
-        host.commitUpdate(recorder);
-      }
+    const sourcePath = `prettier.config.js`;
+    if (!host.exists(sourcePath)) {
+      host.create(sourcePath, 'module.exports =require(\'@kaizenplatform/prettier-config\');')
     }
     return host;
   };
 }
 
-function capInit(projectName: string, npmTool: string, webDir: string): Rule {
-  return (host: Tree, context: SchematicContext) => {
+function runInstall(npmTool: string): Rule {
+  return (host: Tree, context) => {
     const packageInstall = context.addTask(new NodePackageInstallTask());
-    const command = npmTool === 'npm' ? 'npx' : 'yarn';
+    const command = npmTool === 'npm' ? 'npm' : 'yarn';
     context.addTask(
-      new RunSchematicTask('cap-init', {
+      new RunSchematicTask('run-install', {
         command,
         args: [
-          'cap',
-          'init',
-          projectName,
-          '--npm-client',
-          npmTool,
-          '--web-dir',
-          webDir,
+          'install',
         ],
       }),
       [packageInstall]
@@ -84,7 +88,7 @@ function capInit(projectName: string, npmTool: string, webDir: string): Rule {
   };
 }
 
-export default function ngAdd(options: CapAddOptions): Rule {
+export default function ngAdd(options: Schema): Rule {
   return async (host: Tree) => {
     const workspace = await getWorkspace(host);
 
@@ -93,6 +97,7 @@ export default function ngAdd(options: CapAddOptions): Rule {
     }
 
     const projectTree = workspace.projects.get(options.project);
+    const packageMgm = getPackageManager(projectTree.root);
 
     if (projectTree.extensions['projectType'] !== 'application') {
       throw new SchematicsException(
@@ -100,16 +105,10 @@ export default function ngAdd(options: CapAddOptions): Rule {
       );
     }
 
-    const packageMgm = getPackageManager(projectTree.root);
-    const distTarget = projectTree.targets.get('build').options[
-      'outputPath'
-    ] as string;
-    const sourcePath = projectTree.sourceRoot;
-
     return chain([
-      addCapacitorToPackageJson(),
-      addCapPluginsToAppComponent(sourcePath),
-      capInit(options.project, packageMgm, distTarget),
+      addFormatterToPackageJson(),
+      addPrettierConfig(),
+      runInstall(packageMgm),
     ]);
   };
 }

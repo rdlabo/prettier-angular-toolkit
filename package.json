@@ -1,33 +1,24 @@
 {
-  "name": "@capacitor/angular",
-  "version": "1.0.0",
-  "description": "Schematics for capacitor/angular apps.",
-  "homepage": "https://capacitor.ionicframework.com",
-  "author": "Ionic Team <hi@ionicframework.com> (https://ionicframework.com)",
+  "name": "@rdlabo/ng-add-formatter",
+  "version": "0.0.21",
+  "description": "Schematics for prettier and stage-lint in angular apps.",
+  "homepage": "https://github.com/rdlabo/prettier-angular-toolkit",
+  "author": "Masahiko Sakakibara",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ionic-team/capacitor-angular-toolkit"
+    "url": "https://github.com/rdlabo/prettier-angular-toolkit"
   },
   "bugs": {
-    "url": "https://github.com/ionic-team/capacitor-angular-toolkit/issues"
+    "url": "https://github.com/rdlabo/prettier-angular-toolkit/issues"
   },
   "keywords": [
     "angular",
     "Angular CLI",
-    "blueprints",
-    "code generation",
-    "devkit",
-    "schematics",
-    "ionic",
-    "ionic framework",
-    "ionicframework",
-    "capacitor",
-    "cap",
-    "cross platform"
+    "prettier"
   ],
   "license": "MIT",
   "peerDependencies": {
